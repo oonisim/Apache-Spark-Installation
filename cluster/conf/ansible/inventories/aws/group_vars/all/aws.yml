@@ -45,7 +45,7 @@ server_count_master: 1
 # Volumes to attach
 ec2_volumes_master:
   - device_name:  /dev/sda1
-    volume_type:  gp2
+    volume_type:  standard
     volume_size:  16
     delete_on_termination: true
 
@@ -62,7 +62,7 @@ ec2_ami_id_master: "ami-b1a59fd1"
 server_count_worker: 2
 ec2_volumes_worker:
   - device_name:  /dev/sda1
-    volume_type:  gp2
+    volume_type:  standard
     volume_size:  16
     delete_on_termination: true
 
