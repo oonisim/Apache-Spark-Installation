@@ -1,0 +1,85 @@
+#--------------------------------------------------------------------------------
+# SSH public key authentication.
+#--------------------------------------------------------------------------------
+#- name: Set authorized_keys for {{ SYS_USER }}...
+#  authorized_key:
+#    user: "{{ SYS_USER }}"
+#    key: "{{ item }}"
+#  with_items:
+#     - "{{ sys_user_authorized_keys }}"
+#
+## Copy private key after authorized_keys so that .ssh directory is created before.
+#- name: Copy private key for {{ SYS_USER }}...
+#  copy:
+#    content: "{{ sys_user_id_rsa }}"
+#    dest:    "/home/{{ SYS_USER }}/.ssh/id_rsa"
+#    owner:   "{{ SYS_USER }}"
+#    mode:    "0600"
+#
+#- name: Copy DECRYPT_KEY_FILE to {{ SYS_USER }}...
+#  copy:
+#    content: "{{ decrypt_key }}"
+#    dest:    "{{ DECRYPT_KEY_FILE }}"
+#    owner:   "{{ SYS_USER }}"
+#    mode:    "0640"
+
+- name: create .ssh
+  file:
+    path:   "~{{ item.name }}/.ssh"
+    state:  "directory"
+    owner:  "{{ item.name }}"
+    group:  "{{ item.group }}"
+    mode:   0700
+  with_items:
+    - "{{ LINUX_USERS }}"
+
+- name: Copy ssh private key for administration users...
+  copy:
+    content: "{{ lookup('file', item.ssh_private_key) }}"
+    dest:   "~{{ item.name }}/.ssh/{{ item.ssh_private_key | basename }}"
+    owner:  "{{ item.name }}"
+    group:  "{{ item.group }}"
+    mode:    "0600"
+  with_items:
+    - "{{ LINUX_USERS }}"
+
+- name: Set authorized_keys for users...
+  authorized_key:
+    user: "{{ item.0.name }}"
+    key:  "{{ lookup('file', item.1) }}"
+  with_subelements:
+     - "{{ LINUX_USERS }}"
+     - ssh_authorized_keys
+
+#- name: Copy private keys...
+#  copy:
+#    src:   "{{ item.1 }}"
+#    dest:  "/home/{{ item.0.name }}/.ssh/private.pem"
+#    owner: "{{ item.0.name }}"
+#    group: "{{ SPARK_GROUP }}"
+#    mode:  "0600"
+#  with_subelements:
+#    - "{{ LINUX_USERS }}"
+#    - private_key
+#    - flags:
+#      skip_missing: true
+#  when: true
+#
+#--------------------------------------------------------------------------------
+# Sudo setup for the user not to be asked for password.
+#--------------------------------------------------------------------------------
+- name: Create entries under /etc/suders.d for users for no password sudo.
+  shell: "echo '{{ item.name }} ALL=(ALL:ALL) NOPASSWD:ALL' > {{ item.name }}"
+  args:
+    chdir:   /etc/sudoers.d/
+    creates: "{{ item.name }}"
+  with_items:
+    - "{{ LINUX_USERS }}"
+
+- name: Verify if files are created.
+  shell: "grep {{ item.name }} {{ item.name }}"
+  args:
+    chdir: /etc/sudoers.d/
+  with_items:
+    - "{{ LINUX_USERS }}"
+  ignore_errors: no

@@ -1,0 +1,71 @@
+- name: "Delete previous deployments if exists"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-service.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-deployment.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-cluster-role-binding.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-cluster-role.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-role-binding.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-role.yaml
+    {{ CTL }} delete -f {{ role_path|basename }}/kube-state-metrics-service-account.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}"
+  ignore_errors: true
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# K8S REST API response checks.
+#--------------------------------------------------------------------------------
+- name: "mkdir {{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }} if not exist"
+  file:
+    path:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+    state:  "absent"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+  run_once: true
+
+- file:
+    path:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+    state:  "directory"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+
+- name: "Place kubestate metrics manifests for K8S services"
+  template:
+    src: "{{ item }}"
+    dest: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}/{{ item|basename }}"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0770
+  with_fileglob: "{{ role_path }}/templates/*.yaml"
+  run_once: true
+
+- name: "Deploy kubestate metrics"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-service-account.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-role.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-role-binding.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-cluster-role.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-cluster-role-binding.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-service.yaml
+    {{ CTL }} apply -f {{ role_path|basename }}/kube-state-metrics-deployment.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}"
+  run_once: true
+
+# Below is not required as RBAC covers.
+# https://docs.openshift.org/latest/admin_guide/manage_scc.html#grant-access-to-the-privileged-scc
+# https://access.redhat.com/solutions/3120011
+#- name: "Add required previlleage to list API resources"
+#  become: true
+#  become_user: "{{ SPARK_ADMIN }}"
+#  shell: |
+#    oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:{{ KUBESTATE_NAMESPACE }}:{{ KUBESTATE_SERVICE_ACCOUNT }}
+#  when: DISTRIBUTION == DISTRIBUTION_OSE
+#  run_once: true
+

@@ -1,0 +1,2 @@
+HELM_PACKAGE: "helm-v2.8.1-linux-amd64.tar.gz"
+HELM_DOWNLOAD_URL: "https://storage.googleapis.com/kubernetes-helm/{{ HELM_PACKAGE }}"

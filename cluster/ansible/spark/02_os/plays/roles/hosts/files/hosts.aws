@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------
+# /etc/hosts
+#--------------------------------------------------------------------------------
+10.244.0.27  ip-10-244-0-27.us-west-1.compute.internal  aws_worker00
+10.244.0.43  ip-10-244-0-43.us-west-1.compute.internal  aws_worker01
+10.244.0.50  ip-10-244-0-50.us-west-1.compute.internal  aws_master00
+
+127.0.0.1	localhost
+#127.0.1.1	loopback
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback

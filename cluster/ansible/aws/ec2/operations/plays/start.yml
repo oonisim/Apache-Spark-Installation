@@ -1,0 +1,5 @@
+- name: Stop the EC2 Instance
+  hosts: localhost
+  connection: local
+  roles:
+    - site.start

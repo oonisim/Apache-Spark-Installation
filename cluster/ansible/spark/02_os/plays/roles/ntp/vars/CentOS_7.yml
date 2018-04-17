@@ -1,0 +1,15 @@
+pkg_ntp: ntpd
+pkg_haveged: haveged
+
+packages:
+  - ntp
+  - haveged
+  - python-keyczar
+  - python-pip
+  - rsync
+  - git
+  - wget
+  - curl
+  - zip
+  - unzip
+  - gettext

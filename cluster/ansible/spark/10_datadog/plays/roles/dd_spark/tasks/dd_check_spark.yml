@@ -1,0 +1,9 @@
+- name: "Place spark check"
+  template:
+    src: "{{ role_path }}/templates/spark.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/spark.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"
+

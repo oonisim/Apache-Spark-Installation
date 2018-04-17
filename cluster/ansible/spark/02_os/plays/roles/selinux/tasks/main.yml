@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------
+# Disable SELinux
+#--------------------------------------------------------------------------------
+- name: Disable SELinux in /etc/sysconfig/selinux
+  lineinfile:
+    path: /etc/sysconfig/selinux
+    regexp: '^SELINUX=.*'
+    line: 'SELINUX=disabled'
+
+- name: Disable SELinux set enforce 0
+  shell: "set enforce 0"

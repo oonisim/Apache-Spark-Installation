@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------------
+# K8S REST API response checks.
+#--------------------------------------------------------------------------------
+- name: "Place docker daemon check"
+  template:
+    src: "{{ role_path }}/templates/docker_daemon.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/docker_daemon.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"
+
+- name: "Place k8s check"
+  template:
+    src: "{{ role_path }}/templates/kubernetes.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/kubernetes.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"
+
+#----------------------------------------------------------------------
+# Only one node needs to be a event collector in the entire cluster.
+# Need to investigate/confirm the leader election can be used host-installation.
+#----------------------------------------------------------------------
+- name: "Enable event collector on only one node"
+  replace:
+    path:     "{{ DATADOG_AGENT_HOME }}/conf.d/kubernetes.yaml"
+    regexp:   '^(\s+)collect_events:(\s*)false(\s*)$'
+    replace:  '\1collect_events: true'
+  run_once: true

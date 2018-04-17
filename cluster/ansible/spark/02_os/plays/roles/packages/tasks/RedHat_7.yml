@@ -1,0 +1,13 @@
+- name: "Install EPEL package for AWS RHEL"
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+    state: "latest"
+    update_cache: "true"
+  when: ansible_bios_version.find("amazon") != -1
+
+- name: "Install EPEL package"
+  yum:
+    name: "epel-release"
+    state: "latest"
+    update_cache: "true"
+  when: ansible_bios_version.find("amazon") == -1

@@ -1,0 +1,39 @@
+- name: "Delete previous deployments if exists"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} delete -f dd-agent-rbac.yaml && rm -rf dd-agent-rbac.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  ignore_errors: true
+  run_once: true
+
+- name: "Create/recreate {{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  file:
+    path:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+    state:  "directory"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# datadog RBAC for {{ DATADOG_SERVICE_ACCOUNT }}
+#--------------------------------------------------------------------------------
+- name: "Place {{ DATADOG_SERVICE_ACCOUNT }} service account RBAC manifest"
+  template:
+    src:    "{{ role_path }}/templates/dd-agent-rbac.yaml"
+    dest:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}/dd-agent-rbac.yaml"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0640
+  run_once: true
+
+- name: "Deploy RBAC for {{ DATADOG_SERVICE_ACCOUNT }}"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+     {{ CTL }} apply -f dd-agent-rbac.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  run_once: true

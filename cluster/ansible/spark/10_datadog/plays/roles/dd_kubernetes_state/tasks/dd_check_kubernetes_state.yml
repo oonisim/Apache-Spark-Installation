@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------
+# Only one kubestate_metrics instance is enough to get data from API server.
+#--------------------------------------------------------------------------------
+- name: "Place k8s check"
+  template:
+    src: "{{ role_path }}/templates/kubernetes_state.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/kubernetes_state.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"
+  run_once: true

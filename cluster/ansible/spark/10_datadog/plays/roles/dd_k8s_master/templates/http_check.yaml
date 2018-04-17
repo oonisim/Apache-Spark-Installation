@@ -1,0 +1,39 @@
+#--------------------------------------------------------------------------------
+# Connectivity to the K8S components.
+# Make sure dd-agent has the access to the certificates and keys.
+#--------------------------------------------------------------------------------
+init_config:
+  # Change default path of trusted certificates
+  # ca_certs: /etc/ssl/certs/ca-certificates.crt
+
+instances:
+{% for item in ENDPOINTS_K8S_HEALTH %}
+  - name: {{ inventory_hostname }}-{{ item }}
+    url: {{ ENDPOINTS_K8S_HEALTH[item].protocol }}://{{ ENDPOINTS_K8S_HEALTH[item].host }}:{{ ENDPOINTS_K8S_HEALTH[item].port }}/{{ ENDPOINTS_K8S_HEALTH[item].path }}
+    http_response_status_code:      {{ ENDPOINTS_K8S_HEALTH[item].http_code }}
+    content_match:                  '{{ ENDPOINTS_K8S_HEALTH[item].content_match }}'
+    allow_redirects:                true
+    timeout:                        1
+    include_content:                true
+    collect_response_time:          true
+{% if ENDPOINTS_K8S_HEALTH[item].protocol == 'https' %}
+    disable_ssl_validation:         false
+    ignore_ssl_warning:             false
+    check_certificate_expiration:   true
+    days_warning: 30
+    days_critical: 7
+    ca_certs:                       {{ ENDPOINTS_K8S_HEALTH[item].ca_certs }}
+    client_cert:                    {{ ENDPOINTS_K8S_HEALTH[item].client_cert }}
+    client_key:                     {{ ENDPOINTS_K8S_HEALTH[item].client_key }}
+{% else %}
+    disable_ssl_validation:         true
+    ignore_ssl_warning:             true
+    check_certificate_expiration:   false
+{% endif %}
+    tags:
+      - datadog_check:http
+      - datadog_node:{{ inventory_hostname }}
+      - datadog_target:{{ item }}
+      - description:datadog check to test connectivity to {{ item }} on the node {{ ansible_fqdn }}
+      - url:{{ ENDPOINTS_K8S_HEALTH[item].protocol }}://{{ ENDPOINTS_K8S_HEALTH[item].host }}:{{ ENDPOINTS_K8S_HEALTH[item].port }}/{{ ENDPOINTS_K8S_HEALTH[item].path }}
+{% endfor %}

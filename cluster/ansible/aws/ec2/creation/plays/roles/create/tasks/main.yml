@@ -1,0 +1,8 @@
+---
+- import_tasks: iam.yml
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+- import_tasks: vpc.yml
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+- import_tasks: ec2.yml

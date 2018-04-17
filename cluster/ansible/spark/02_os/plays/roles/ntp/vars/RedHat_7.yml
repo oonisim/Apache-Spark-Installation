@@ -1,0 +1,23 @@
+pkg_ntp: ntpd
+pkg_haveged: haveged
+
+packages:
+  # Moved to prerequisites
+  # See https://aws.amazon.com/premiumsupport/knowledge-center/ec2-enable-epel/
+  #- https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+  - ntp
+  - haveged
+  - python-keyczar
+  - python-pip
+  - rsync
+  - git
+  - wget
+  - curl
+  - zip
+  - unzip
+  - gettext
+  - telnet
+  - nmap
+  - lsof
+  - net-tools
+  - atop

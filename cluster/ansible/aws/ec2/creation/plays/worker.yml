@@ -1,0 +1,7 @@
+- name: Configuring the EC2 Instance for worker nodes
+  hosts: localhost
+  connection: local
+  vars:
+    NODE_TYPE: "{{ NODE_TYPE_WORKER }}"
+  roles:
+    - create

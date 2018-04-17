@@ -1,0 +1,42 @@
+---
+#--------------------------------------------------------------------------------
+# [K8S AWS Cloud Provider Notes]
+# https://docs.google.com/document/d/17d4qinC_HnIwrK0GHnRlD1FKkTNdN__VO4TH9-EzbIY/edit
+# Set a tag on all resources in the form of KubernetesCluster=<cluster name>
+#  All instances
+#  One and only one SG for each instance should be tagged.
+#  - This will be modified as necessary to allow ELBs to access the instance
+#--------------------------------------------------------------------------------
+- name: "Get list of instances in the {{ ENV_ID }} environment..."
+#  ec2_remote_facts:  # Deprecated
+  ec2_instance_facts:
+    filters:
+      "tag:environment": "{{ ENV_ID }}"
+      instance-state-name: running
+    region:          "{{ aws_region }}"
+  register: ec2
+
+- name: "Tag EC2 instancess"
+  ec2_tag:
+    region:               "{{ aws_region }}"
+    resource:             "{{ item.instance_id }}"
+    tags:
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  with_items:     "{{ ec2.instances }}"
+
+- name: "Get list of SGs in the {{ ENV_ID }} environment..."
+  ec2_group_facts:
+    filters:
+      group_name:         "{{ ec2_security_group }}"
+    region:               "{{ aws_region }}"
+  register: sg
+
+- name: "Tag SG"
+  ec2_tag:
+    region:               "{{ aws_region }}"
+    resource:             "{{ item.group_id }}"
+    tags:
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  with_items:             "{{ sg.security_groups }}"

@@ -1,0 +1,4 @@
+KUBESTATE_NAMESPACE: "kube-system"
+KUBESTATE_SERVICE_ACCOUNT: "kube-state-metrics"
+#KUBESTATE_NODE_SELECTOR: '{"node_type":"monitor"}'
+KUBESTATE_NODE_SELECTOR:

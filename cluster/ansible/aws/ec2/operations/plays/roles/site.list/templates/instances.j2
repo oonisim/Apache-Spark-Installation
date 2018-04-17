@@ -1,0 +1,12 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#--------------------------------------------------------------------------------
+# EC2 instance IDs in {{ ENV_ID }}
+#--------------------------------------------------------------------------------
+# [instances]
+{% for item in ec2_instance_list.instances %}
+{{ item.id }}
+{% endfor %}
+
+{% for item in ec2_instance_list.instances %}
+    {% if list.append( item.tags.Name ) %} {% endif %}
+{% endfor %}

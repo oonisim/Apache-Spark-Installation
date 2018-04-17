@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------
+# Datadog etcd check.
+# https://github.com/DataDog/integrations-core/tree/master/etcd
+#--------------------------------------------------------------------------------
+- import_tasks: permissions.yml
+
+- name: "Place etcd check for {{ role_path|basename }}"
+  template:
+    src:    "{{ role_path }}/templates/etcd.yaml"
+    dest:   "{{ DATADOG_AGENT_HOME }}/conf.d/etcd.yaml"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0640
+  notify: "restart_datadog"

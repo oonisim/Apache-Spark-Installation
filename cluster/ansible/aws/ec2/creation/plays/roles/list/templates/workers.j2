@@ -1,0 +1,8 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#--------------------------------------------------------------------------------
+# Workers
+#--------------------------------------------------------------------------------
+{% for item in hostvars['AWS_HOLDER_WORKER']['ec2'].instances %}
+# MASTER_NODE_IP={{ item.private_ip }}
+{{ item.private_dns_name }}
+{% endfor %}

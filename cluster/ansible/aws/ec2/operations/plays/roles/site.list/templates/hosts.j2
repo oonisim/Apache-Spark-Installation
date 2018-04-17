@@ -1,0 +1,13 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#--------------------------------------------------------------------------------
+# /etc/hosts
+#--------------------------------------------------------------------------------
+{% for item in ec2_instance_list.instances %}
+{{ item.private_ip_address }}  {{ item.private_dns_name }}  {{ item.tags.Name }}
+{% endfor %}
+
+127.0.0.1	localhost
+#127.0.1.1	loopback
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback

@@ -1,0 +1,15 @@
+- name: Build start_hosts dictionary
+  set_fact:
+    stop_hosts: "{{ stop_hosts }} + [ '{{ item.id }}' ]"
+  when: item.tags.nostop|default("false") != "true"
+  with_items: "{{ ec2_instances.instances }}"
+
+- name: Stop EC2 instances whose 'nostop' tag value is NOT true
+  ec2:
+    instance_ids: "{{ stop_hosts }}"
+    region:       "{{ aws_region }}"
+    # Use environment variables
+    #aws_access_key:       "{{ ec2_access_key }}"
+    #aws_secret_key:       "{{ ec2_secret_key }}"
+    state:        "stopped"
+    wait:         "true"

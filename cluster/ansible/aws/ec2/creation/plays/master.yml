@@ -1,0 +1,7 @@
+- name: Configuring the EC2 Instance for master node
+  hosts: localhost
+  connection: local
+  vars:
+    NODE_TYPE: "{{ NODE_TYPE_MASTER }}"
+  roles:
+    - create

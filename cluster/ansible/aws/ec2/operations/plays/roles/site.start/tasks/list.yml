@@ -1,0 +1,6 @@
+- name: Get list of instances to start...
+  ec2_remote_facts:
+    filters:
+      instance-state-name: stopped
+    region:          "{{ aws_region }}"
+  register: ec2_instances

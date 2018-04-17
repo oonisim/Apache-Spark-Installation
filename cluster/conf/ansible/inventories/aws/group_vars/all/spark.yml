@@ -1,0 +1,6 @@
+SPARK_PACKAGE: "spark-2.3.0-bin-hadoop2.7.tgz"
+SPARK_DOWNLOAD_URL: "http://apache.melbourneitmirror.net/spark/spark-2.3.0/{{ SPARK_PACKAGE }}"
+SPARK_PACKAGE_CHECKSUM: md5:AF45EEB06DC1BEEE6D4C70B92C0E0237
+SPARK_DOWNLOAD_DIR: "~/{{ SPARK_ADMIN }}/downloads"
+SPARK_HOME: "/usr/local/spark"
+SPARK_URL: "http://localhost:8080"

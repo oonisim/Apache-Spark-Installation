@@ -1,0 +1,14 @@
+---
+- name: Overwrite /etc/hosts file. Skip if there is no hosts file to transfer.
+  copy:
+    src   : "{{ role_path }}/files/hosts"
+    dest  : "/etc/hosts"
+    owner : root
+    group : root
+    mode  : 0664
+    backup: yes
+  register: _result
+  ignore_errors: true
+
+
+

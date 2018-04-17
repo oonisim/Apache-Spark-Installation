@@ -1,0 +1,8 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+---
+# You need to use that account for your dd-agent DaemonSet
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ DATADOG_SERVICE_ACCOUNT }}
+  namespace: {{ DATADOG_NAMESPACE }}

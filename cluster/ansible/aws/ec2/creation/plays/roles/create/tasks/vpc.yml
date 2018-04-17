@@ -1,0 +1,130 @@
+# http://jeremievallee.com/2016/07/27/aws-vpc-ansible/
+# First task : creating the VPC.
+# We are using the variables set in the vars.yml file.
+# The module gives us back its result,
+# which contains information about our new VPC.
+# We register it in the variable k8s_vpc.
+
+- name:               Create VPC
+  ec2_vpc_net:
+    name:             "{{ vpc_name }}"
+    cidr_block:       "{{ vpc_cidr_block }}"
+    region:           "{{ aws_region }}"
+    state:            "present"
+    tags:
+      Name:               "{{ vpc_name }}"
+      type:               "VPC"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  register: k8s_vpc
+
+# Creating our only Subnet in the VPC.
+# A subnet needs to be located in an Availability Zone (or AZ).
+# Again, we register the results in a variable for later.
+
+- name:               Create Public Subnet
+  ec2_vpc_subnet:
+    state:            "present"
+    vpc_id:           "{{ k8s_vpc.vpc.id }}"
+    cidr:             "{{ public_subnet_1_cidr }}"
+    az:               "{{ aws_zone }}"
+    region:           "{{ aws_region }}"
+    resource_tags:
+      Name:           "Public Subnet"
+    tags:
+      Name:               "{{ ENV_ID }}_subnet"
+      type:               "subnet"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  register: k8s_public_subnet
+
+# Every VPC needs at least one Internet Gateway.
+# This component allows traffic between the VPC and the outside world.
+
+- name:               Create Internet Gateway for VPC
+  ec2_vpc_igw:
+    vpc_id:           "{{ k8s_vpc.vpc.id }}"
+    region:           "{{ aws_region }}"
+    state:            "present"
+    tags:
+      Name:               "{{ ENV_ID }}_gateway"
+      type:               "gateway"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  register: k8s_vpc_gw
+
+
+# Now we set up a Route Table.
+# We attach that Route Table to the Public Subnet.
+# The route we create here defines the default routing
+# of the table, redirecting requests to the Internet Gateway.
+# We don't see it here, but the route table will also contain
+# a route for resources inside the VPC, so that if we need
+# to reach an internal resource, we don't go to the Internet
+# Gateway.
+
+- name:               Set up public subnet route table
+  ec2_vpc_route_table:
+    vpc_id:           "{{ k8s_vpc.vpc.id }}"
+    region:           "{{ aws_region }}"
+    subnets:
+      - "{{ k8s_public_subnet.subnet.id }}"
+    routes:
+      - dest:         "0.0.0.0/0"
+        gateway_id:   "{{ k8s_vpc_gw.gateway_id }}"
+    tags:
+      Name:               "{{ ENV_ID }}_route_table"
+      type:               "route_table"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  register: k8s_vpc_route_table
+
+- name: "Preserve VPC information to dummy host"
+  add_host:
+    name:         "AWS_HOLDER_VPC"
+    vpc:          "{{ k8s_vpc }}"
+    subnet:       "{{ k8s_public_subnet }}"
+    gateway:      "{{ k8s_vpc_gw }}"
+    route_table:  "{{ k8s_vpc_route_table }}"
+
+# Finally, we create our Main Security Group.
+# Basically the idea here is to allow SSH access
+# from your IP to the EC2 resources you will
+# start in your VPC.
+
+- name:               Create Main Security Group
+  ec2_group:
+    name:             "{{ ec2_security_group }}"
+    description:      "K8S Security Group"
+    vpc_id:           "{{ k8s_vpc.vpc.id }}"
+    region:           "{{ aws_region }}"
+    rules:
+      - proto:        "tcp"
+        from_port:    "22"
+        to_port:      "22"
+        #cidr_ip:      "{{ my_ip }}/32"
+        cidr_ip: 0.0.0.0/0
+      - proto:        "tcp"
+        from_port:    "443"
+        to_port:      "443"
+        #cidr_ip:      "{{ my_ip }}/32"
+        cidr_ip: 0.0.0.0/0
+    tags:
+      Name:               "{{ ec2_security_group }}"
+      type:               "security_group"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  register: k8s_sg
+
+- name: "Allow security group internal communications"
+  ec2_group:
+    name:             "{{ ec2_security_group }}"
+    description:      "K8S Security Group"
+    group_id:         "{{ k8s_sg.group_id }}"
+    purge_rules:      no
+    purge_tags:       no
+    rules:
+      - proto:        all
+        from_port:    0
+        to_port:      65535
+        group_id:     "{{ k8s_sg.group_id }}"

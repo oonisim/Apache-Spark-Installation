@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------
+# Resgart DD agent on host
+#--------------------------------------------------------------------------------
+- name: "restart datadog agent"
+  shell: |
+    /etc/init.d/datadog-agent restart
+    sleep 15
+    /etc/init.d/datadog-agent info -v
+  register: ddagent_restart
+  listen: "restart_datadog"

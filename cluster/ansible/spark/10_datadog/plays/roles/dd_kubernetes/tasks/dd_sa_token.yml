@@ -1,0 +1,17 @@
+- name: "Setup token file directory of Service account {{ DATADOG_SERVICE_ACCOUNT }}"
+  file:
+    path:   "{{ DATADOG_SA_TOKEN_DIR }}"
+    state:  "directory"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0500
+
+- name: "Set token file"
+  copy:
+    dest:     "{{ DATADOG_SA_TOKEN_PATH }}"
+#    content:  "{{ DATADOG_SA_TOKEN }}"
+    content:  "{{ hostvars['DATA_HOLDER_HOST']['datadog_sa_token'] }}"
+    owner:    "dd-agent"
+    group:    "dd-agent"
+    mode:     0400
+  notify: "restart_datadog"

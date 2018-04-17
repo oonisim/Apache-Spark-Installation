@@ -1,0 +1,17 @@
+---
+#--------------------------------------------------------------------------------
+# [Considerations]
+# Which SSH user/key files to use should not be embedded in the code.
+#--------------------------------------------------------------------------------
+- name: Setup Ansible pre-requisites...
+  #--------------------------------------------------------------------------------
+  # DO NOT USER all as hosts.
+  # For EC2, it will include all instances except excluded with --limit.
+  #--------------------------------------------------------------------------------
+  hosts: environment
+  any_errors_fatal: true
+  become: yes
+  gather_facts: no
+  roles:
+    - python
+

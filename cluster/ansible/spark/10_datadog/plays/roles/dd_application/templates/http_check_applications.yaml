@@ -1,0 +1,41 @@
+init_config:
+  # Change default path of trusted certificates
+  # ca_certs: /etc/ssl/certs/ca-certificates.crt
+
+instances:
+{% for item in ENDPOINTS_APP_HEALTH %}
+  - name:     {{ ENDPOINTS_APP_HEALTH[item].name }}
+    timeout:  10
+    http_response_status_code: {{ ENDPOINTS_APP_HEALTH[item].http_code }}
+    include_content: true
+    collect_response_time: true
+    disable_ssl_validation: false
+    ignore_ssl_warning: false
+    check_certificate_expiration: true
+    days_warning: 30
+    days_critical: 14
+    allow_redirects: true
+    url:      {{ ENDPOINTS_APP_HEALTH[item].url  }}
+    method: {{ ENDPOINTS_APP_HEALTH[item].method }}
+{% if ENDPOINTS_APP_HEALTH[item].method == 'post' %}
+    data:
+      post_data:
+        status:
+          health: 'good'
+          tableName: 'health'
+        data:
+          sysId: 'test'
+          timestamp: 'xxx'
+{% endif %}
+    headers:
+      Content-Type: application/json
+      Authorization: {{ ENDPOINTS_APP_HEALTH[item].auth_token }}
+      x-initialsystem: internal
+      x-api-key: internal
+    skip_event: true
+    tags:
+       - target:{{ ENDPOINTS_APP_HEALTH[item].name }}
+       - url:{{ ENDPOINTS_APP_HEALTH[item].url }}
+       - datadog_node:{{ inventory_hostname  }}
+{% endfor %}
+

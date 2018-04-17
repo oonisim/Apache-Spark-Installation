@@ -1,0 +1,28 @@
+#--------------------------------------------------------------------------------
+# Make sure dd-agent user can access K8S client certificates for K8S checks.
+# This has been done in K8S installation module but to be sure.
+#--------------------------------------------------------------------------------
+- name: "Give rx access to {{ ETCD_CA_HOME }} for {{ SPARK_GROUP }}"
+  file:
+    path:     "{{ ETCD_CA_HOME }}"
+    state:    "directory"
+    group:    "{{ SPARK_GROUP }}"
+    mode:     0750
+
+- name: "Chage directory permission for {{ SPARK_GROUP }} to reach {{ ETCD_CA_HOME }}"
+  shell: |
+    dir="{{ ETCD_CA_HOME }}"
+    while [[ ${dir} != "/etc" && -d ${dir} ]]; do chgrp {{ SPARK_GROUP }} "${dir}" && chmod g+x "${dir}" && dir=$(dirname "${dir}"); done;
+  args:
+    executable: /bin/bash
+
+- name: "Give r access to client certificate files for {{ SPARK_GROUP }}"
+  file:
+    path:     "{{ item }}"
+    state:    "file"
+    group:    "{{ SPARK_GROUP }}"
+    mode:     0640
+  with_items:
+    - "{{ ETCD_CLIENT_CRT }}"
+    - "{{ ETCD_CLIENT_KEY }}"
+    - "{{ ETCD_CA_CRT }}"

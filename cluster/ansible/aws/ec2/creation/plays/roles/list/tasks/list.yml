@@ -1,0 +1,18 @@
+---
+- name: create master node information file...
+  local_action:
+    module: template
+    src:    master.j2
+    dest:   "{{ OUTPUT_DIR }}/master"
+
+- name: create master node information file...
+  local_action:
+    module: template
+    src:    workers.j2
+    dest:   "{{ OUTPUT_DIR }}/workers"
+
+- name: create hosts file for /etc/hosts ...
+  local_action:
+    module: template
+    src:    hosts.j2
+    dest:   "{{ OUTPUT_DIR }}/hosts"

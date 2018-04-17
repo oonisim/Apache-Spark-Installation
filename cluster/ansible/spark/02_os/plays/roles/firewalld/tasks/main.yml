@@ -1,0 +1,8 @@
+#--------------------------------------------------------------------------------
+# Disable Firewalld (K8S uses iptables)
+#--------------------------------------------------------------------------------
+- service:
+    name: firewalld
+    state: stopped
+    enabled: no
+  ignore_errors: true

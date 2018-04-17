@@ -1,0 +1,24 @@
+digraph build {
+    rankdir=LR;
+    node [shape = "box", fontname="Helvetica"];
+    edge [arrowhead = "vee"];
+    subgraph component {
+        metadata_generator [label="cc-metadata-generator"];
+        frontend [label="cc-frontend"];
+        middleware [label="cc-middleware"];
+        middleware_common [label="cc-middleware-common"];
+        dql [label="cc-dql"];
+    }
+    subgraph packaging {
+        package [label="cc-package"];
+        integration [label="cc-deploy-[env]"];
+    }
+    metadata_generator -> package;
+    frontend -> package;
+    middleware -> package;
+    middleware_common -> middleware;
+    dql -> package;
+    mdm -> package;
+
+    package -> integration;
+}

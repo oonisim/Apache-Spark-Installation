@@ -1,0 +1,14 @@
+- name: "Overwrite {{ SPARK_HOME }}/conf/slaves"
+  copy:
+    src   : "{{ role_path }}/files/workers"
+    dest  : "{{ SPARK_HOME }}/conf/slaves"
+    owner : "{{ SPARK_ADMIN }}"
+    group : "{{ SPARK_GROUP }}"
+    mode  : 0664
+    backup: yes
+
+- name: "Start cluster"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{SPARK_HOME}}/sbin/start-all.sh

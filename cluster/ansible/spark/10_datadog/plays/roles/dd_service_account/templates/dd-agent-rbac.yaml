@@ -1,0 +1,55 @@
+#------------------------------------------------------------------------
+# https://docs.datadoghq.com/integrations/kubernetes/#kubernetes-state-metrics
+# leader election option for the Kubernetes event collector.
+# DD Agents coordinate by performing a leader election among members of
+# the Datadog DaemonSet through kubernetes to ensure only one leader agent
+# instance is gathering events at a given time.
+#------------------------------------------------------------------------
+kind: ClusterRole
+apiVersion: {{ RBAC_API_VERSION }}
+metadata:
+  name: datadog
+rules:
+- nonResourceURLs:
+  - "/version"  # Used to get apiserver version metadata
+  - "/healthz"  # Healthcheck
+  verbs: ["get"]
+- apiGroups: [""]
+  resources:
+    - "nodes"
+    - "nodes/status"
+    - "nodes/log"
+    - "nodes/metrics"
+    - "nodes/proxy"
+    - "nodes/spec"
+    - "nodes/stats"
+    - "namespaces"  #
+    - "events"      # Cluster events + kube_service cache invalidation
+    - "services"    # kube_service tag
+    - "pods"
+    - "pods/status"
+  verbs: ["get", "list", "view"]
+- apiGroups: [""]
+  resources:
+    - "configmaps"
+  resourceNames: ["datadog-leader-elector"]
+  verbs: ["get", "delete", "update"]
+- apiGroups: [""]
+  resources:
+    - "configmaps"
+  verbs: ["create"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: {{ RBAC_API_VERSION }}
+metadata:
+  name: datadog
+subjects:
+- kind: ServiceAccount
+  name: {{ DATADOG_SERVICE_ACCOUNT }}
+  namespace: {{ DATADOG_NAMESPACE }}
+roleRef:
+  kind: ClusterRole
+  name: datadog
+  apiGroup: rbac.authorization.k8s.io
+

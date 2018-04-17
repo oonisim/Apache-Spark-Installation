@@ -1,0 +1,29 @@
+- include_vars: "{{ ansible_distribution }}_{{ ansible_distribution_major_version}}.yml"
+
+#--------------------------------------------------------------------------------
+# Application group/user/home.
+#--------------------------------------------------------------------------------
+- name: "Create group {{ SPARK_GROUP }}..."
+  group:
+    name: "{{ SPARK_GROUP }}"
+    state: present
+
+#--------------------------------------------------------------------------------
+# Create users for provisioning and deployment and make SPARK_GROUP as their group
+# to mark that these users are for the APP.
+#--------------------------------------------------------------------------------
+- name: Create administration users...
+  user:
+    name:     "{{ item.name }}"
+    group:    "{{ item.group }}"
+    groups:   "{{ item.groups }}"
+    append:   "yes"                 # useradd -aG
+    password: "{{ item.password }}"
+    system:   yes
+    shell:    /bin/bash
+    state:    present
+  with_items:
+    - "{{ LINUX_USERS }}"
+
+
+- include_tasks: ssh.yml

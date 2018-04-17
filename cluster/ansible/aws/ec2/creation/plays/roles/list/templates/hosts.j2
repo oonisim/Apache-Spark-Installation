@@ -1,0 +1,24 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#--------------------------------------------------------------------------------
+# /etc/hosts created by Ansible
+# [VPC]
+# ID :  {{ hostvars['AWS_HOLDER_VPC']['vpc']['vpc']['id'] }}
+# CIDR: {{ hostvars['AWS_HOLDER_VPC']['vpc']['vpc']['cidr_block'] }}
+#
+# [Subnet]
+# ID:   {{ hostvars['AWS_HOLDER_VPC']['subnet']['subnet']['id'] }}
+# CIDR: {{ hostvars['AWS_HOLDER_VPC']['subnet']['subnet']['cidr_block'] }}
+# AZ:   {{ hostvars['AWS_HOLDER_VPC']['subnet']['subnet']['availability_zone'] }}
+#--------------------------------------------------------------------------------
+{% for item in hostvars['AWS_HOLDER_MASTER']['ec2']['instances'] %}
+{{ item.private_ip }}  {{ item.private_dns_name }}
+{% endfor %}
+{% for item in hostvars['AWS_HOLDER_WORKER']['ec2']['instances'] %}
+{{ item.private_ip }}  {{ item.private_dns_name }}
+{% endfor %}
+
+127.0.0.1	localhost
+#127.0.1.1	loopback
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback

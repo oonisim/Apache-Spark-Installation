@@ -1,0 +1,15 @@
+[masters]
+
+[masters:children]
+tag_type_master
+
+[workers]
+
+[workers:children]
+tag_type_worker
+
+# Entire nodes
+[environment]
+
+[environment:children]
+tag_environment_aws

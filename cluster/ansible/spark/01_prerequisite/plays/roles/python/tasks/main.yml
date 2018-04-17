@@ -1,0 +1,103 @@
+---
+#--------------------------------------------------------------------------------
+# Install python as the pre-requisite of Ansible.
+# [REQUIREMENT]
+# Set gather_facts = false in the caller playbook as facts cannot be gathered without Python.
+#
+# [Notes]
+# "which -a python2" identifies the installation of python 2.x.
+#
+# To be cleaned up to avoid repetitions.
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# Check OS distribution and Python 2.
+#--------------------------------------------------------------------------------
+- name: Check if Ubuntu, otherwise carry on ignoring errors.
+  raw:  (cat /etc/os-release | grep '^NAME=' | grep "Ubuntu")
+#  raw:  cat /etc/os-release | grep '^NAME=' | sed -n 's/^NAME=\"\(.*\)\"$/\1/p'
+
+  register: isUbuntu
+  ignore_errors: yes
+
+- name: Check if CentOS, otherwise carry on ignoring errors.
+  raw:  (cat /etc/os-release | grep '^NAME=' | grep "CentOS")
+  register: isCentOS
+  ignore_errors: yes
+
+- name: Check if RedHat, otherwise carry on ignoring errors.
+  raw:  (cat /etc/os-release | grep '^NAME=' | grep "Red Hat Enterprise")
+  register: isRedHat
+  ignore_errors: yes
+
+- name: Check if python2 is available...
+  raw:  (which -a python2)
+  register: isPython
+  ignore_errors: yes
+
+#--------------------------------------------------------------------------------
+# Ubuntu
+#--------------------------------------------------------------------------------
+- include_vars: Ubuntu.yml
+  when: isUbuntu.rc == 0
+
+- name: Ubuntu apt-get update...
+  raw: apt-get -qy update
+  when: isUbuntu.rc == 0
+
+- name: Ubuntu install Python packages...
+  raw: apt-get install -qy {{ item }}
+  with_items: "{{ python_packages }}"
+  when: isUbuntu.rc == 0
+#      when: isUbuntu.rc == 0 and isPython.rc != 0
+
+#--------------------------------------------------------------------------------
+# CentOS
+#--------------------------------------------------------------------------------
+# Need to confirm the correct way to install Python 2.7 on RHEL/CentOS.
+# Articles indicates multiple steps are required. May need to send a script.
+#--------------------------------------------------------------------------------
+- include_vars: CentOS.yml
+  when: isCentOS.rc == 0
+
+- name: CentOS yum update ...
+  raw: yum -y update
+  when: isCentOS.rc == 0
+
+- name: CentOS install Python packages...
+  raw: yum -y update && yum -y install {{ item }}
+  with_items: "{{ python_packages }}"
+  when: isCentOS.rc == 0
+
+#--------------------------------------------------------------------------------
+# Redhat
+#--------------------------------------------------------------------------------
+- include_vars: RedHat.yml
+  when: isRedHat.rc == 0
+
+- name: RedHat yum update...
+  raw: yum -y update
+  when: isRedHat.rc == 0
+
+- name: Check if EPEL is installed
+  shell: rpm -qa  | grep {{ epel_check }}
+  register: isEPELInstalled
+  ignore_errors: true
+
+- name: RedHat install Python packages...
+  raw: yum -y install {{ item }}
+  with_items: "{{ epel_packages }}"
+  when: isRedHat.rc == 0 and isEPELInstalled.rc != 0
+
+- name: RedHat install Python packages...
+  raw: yum -y install {{ item }}
+  with_items: "{{ python_packages }}"
+  when: isRedHat.rc == 0
+
+#--------------------------------------------------------------------------------
+# action: setup will gather facts after python2 has been installed
+#--------------------------------------------------------------------------------
+- action: setup
+
+- pip:
+    name: boto

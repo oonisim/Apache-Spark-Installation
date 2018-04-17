@@ -1,0 +1,5 @@
+- name: Configuring the EC2 Instance for worker nodes
+  hosts: localhost
+  connection: local
+  roles:
+    - list

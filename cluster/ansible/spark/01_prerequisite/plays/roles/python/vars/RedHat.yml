@@ -1,0 +1,9 @@
+epel_check: 'epel-release-.*.noarch'
+
+epel_packages:
+  # See https://aws.amazon.com/premiumsupport/knowledge-center/ec2-enable-epel/
+  - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+python_packages:
+#  - python-simplejson
+  - python2

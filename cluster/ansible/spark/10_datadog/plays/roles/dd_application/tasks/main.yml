@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------
+# Application REST API response checks.
+#--------------------------------------------------------------------------------
+- name: "Place dd-agent http_check manifest."
+  template:
+    src: "{{ role_path }}/templates/http_check_applications.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/http_check.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"

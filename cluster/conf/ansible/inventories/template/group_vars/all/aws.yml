@@ -1,0 +1,66 @@
+#--------------------------------------------------------------------------------
+# EC2
+#--------------------------------------------------------------------------------
+# EC2 SSH keypair to SSH login to the instances.
+EC2_KEYPAIR_NAME: "aws_maonishi_us-west-1.pem"
+
+# Amazon Security Group Name - this MUST already
+# exist before our Ansible scripts can be run.
+ec2_security_group: "SG_K8S_TEST"
+
+# Location of the servers - the us-east region
+# is generally cheapest.
+aws_region: "us-west-1"
+aws_zone:   "us-west-1b"
+
+
+# VPC Information
+vpc_name:       "VPC_K8S"
+vpc_cidr_block: "10.244.0.0/16"
+
+# For Security Group Rule
+my_ip:          "X.X.X.X"
+
+# Subnets
+public_subnet_1_cidr:  "10.244.0.0/24"
+private_subnet_1_cidr: "10.244.1.0/24"
+public_subnet_2_cidr:  "10.244.10.0/24"
+private_subnet_2_cidr: "10.244.11.0/24"
+
+
+#--------------------------------------------------------------------------------
+# Master
+#--------------------------------------------------------------------------------
+# The default number of servers to be created.
+server_count_master: 1
+
+# Volumes to attach
+ec2_volumes_master:
+  - device_name:  /dev/sda1
+    volume_type:  gp2
+    volume_size:  10
+    delete_on_termination: true
+
+# The EC2 server type to use.
+ec2_instance_type_master: "t2.medium"
+
+#CentOS Linux 7 x86_64 HVM EBS 1708_11.01-b7ee8a69-ee97-4a49-9e68-afaee216db2e-ami-95096eef.4
+ec2_ami_id_master: "ami-b1a59fd1"
+
+#--------------------------------------------------------------------------------
+# Worker
+#--------------------------------------------------------------------------------
+# The default number of servers to be created.
+server_count_worker: 2
+ec2_volumes_worker:
+  - device_name:  /dev/sda1
+    volume_type:  gp2
+    volume_size:  10
+    delete_on_termination: true
+
+# The EC2 server type to use.
+ec2_instance_type_worker: "t2.medium"
+
+#CentOS Linux 7 x86_64 HVM EBS 1708_11.01-b7ee8a69-ee97-4a49-9e68-afaee216db2e-ami-95096eef.4
+ec2_ami_id_worker: "ami-b1a59fd1"
+

@@ -1,0 +1,147 @@
+#--------------------------------------------------------------------------------
+# Retrieve VPC/subnet information from the dummy host variables.
+#--------------------------------------------------------------------------------
+- set_fact:
+    k8s_public_subnet: "{{ hostvars['AWS_HOLDER_VPC']['subnet'] }}"
+
+#--------------------------------------------------------------------------------
+# Set EC2 parameters and create instances.
+#--------------------------------------------------------------------------------
+- name: Set EC2 for Master
+  set_fact:
+    ec2_ami_id        : "{{ ec2_ami_id_master }}"
+    ec2_instance_type : "{{ ec2_instance_type_master }}"
+    ec2_volumes       : "{{ ec2_volumes_master }}"
+    server_count      : "{{ server_count_master }}"
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+- name: Set EC2 for Worker
+  set_fact:
+    ec2_ami_id        : "{{ ec2_ami_id_worker }}"
+    ec2_instance_type : "{{ ec2_instance_type_worker }}"
+    ec2_volumes       : "{{ ec2_volumes_worker }}"
+    server_count      : "{{ server_count_worker }}"
+  when: NODE_TYPE == NODE_TYPE_WORKER
+
+- name: "Create {{ server_count }} instances for {{ NODE_TYPE }}"
+  ec2:
+    region:                 "{{ aws_region }}"
+    zone:                   "{{ aws_zone }}"
+    image:                  "{{ ec2_ami_id }}"
+    group:                  "{{ ec2_security_group }}"
+    vpc_subnet_id:          "{{ k8s_public_subnet.subnet.id }}"
+    instance_profile_name:  "{{ CLOUD_PROVIDER_ROLE_NAME }}"
+    instance_type:          "{{ ec2_instance_type }}"
+    assign_public_ip:       "yes"
+    count:                  "{{ server_count }}"
+    volumes:                "{{ ec2_volumes }}"
+    # Use environment variables
+    #aws_access_key:       "{{ ec2_access_key }}"
+    #aws_secret_key:       "{{ ec2_secret_key }}"
+    #--------------------------------------------------------------------------------
+    # SSH key-pair name (Mandatory to be able to SSH login
+    #--------------------------------------------------------------------------------
+    key_name:        "{{ EC2_KEYPAIR_NAME }}"
+    wait: true
+  register: ec2
+
+#--------------------------------------------------------------------------------
+# Preserve the EC2 instance information for later use.
+#--------------------------------------------------------------------------------
+- name: "Preserve VPC information to dummy host"
+  add_host:
+    name: "AWS_HOLDER_MASTER"
+    ec2: "{{ ec2 }}"
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+- name: "Preserve VPC information to dummy host"
+  add_host:
+    name: "AWS_HOLDER_WORKER"
+    ec2: "{{ ec2 }}"
+  when: NODE_TYPE == NODE_TYPE_WORKER
+
+- debug:
+    msg: "{{ hostvars['AWS_HOLDER_MASTER']['ec2'] }}"
+
+- name: Wait for the instance to come up
+  wait_for:
+    delay:   5
+    host:    "{{ item.public_ip }}"
+    port:    22
+    state:   started
+    timeout: 300
+  with_items: "{{ ec2.instances }}"
+
+#--------------------------------------------------------------------------------
+# Allocate public/persistent IP for master.
+#--------------------------------------------------------------------------------
+- name: Allocating elastic IP
+  ec2_eip:
+    device_id:        "{{ item }}"
+    region:           "{{ aws_region }}"
+    in_vpc:           yes
+    state:            present
+    reuse_existing_ip_allowed: yes
+  with_items: "{{ ec2.instance_ids }}"
+  register: eip
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+- name: Wait for the instance with elastic IP to come up
+  wait_for:
+    delay:   5
+    host:    "{{ item.public_ip }}"
+    port:    22
+    state:   started
+    timeout: 300
+  with_items: "{{ eip.results }}"
+  when: NODE_TYPE == NODE_TYPE_MASTER
+
+#- name: Add new instance to group
+#  local_action:
+#    module:              add_host
+#    groups:              "{{ NODE_TYPE }}"
+#    name:                "{{ item.public_ip_address }}"
+#    ec2_private_ip:      "{{ item.private_ip_address }}"
+#    ec2_private_dns_name: "{{ item.public_dns_name }}"
+#    ec2_public_ip:       "{{ item.public_ip_address }}"
+#    ec2_public_dns_name: "{{ item.public_dns_name }}"
+#  when: 'item.id in ec2.instance_ids'
+#  with_items: "{{ ec2_list.instances }}"
+#  register: ec2_groups
+
+#--------------------------------------------------------------------------------
+# Tag EC2/SG for K8S AWS cloud provider.
+#--------------------------------------------------------------------------------
+# [K8S AWS Cloud Provider Notes]
+# https://docs.google.com/document/d/17d4qinC_HnIwrK0GHnRlD1FKkTNdN__VO4TH9-EzbIY/edit
+# Set a tag on all resources in the form of KubernetesCluster=<cluster name>
+#  All instances
+#  One and only one SG for each instance should be tagged.
+#  - This will be modified as necessary to allow ELBs to access the instance
+#--------------------------------------------------------------------------------
+- name: "Tag EC2 instancess"
+  ec2_tag:
+    region:               "{{ aws_region }}"
+    resource:             "{{ item[1] }}"
+    tags:
+      Name:               "{{ ENV_ID }}_{{ NODE_TYPE }}{{ '%02d'|format(item[0]|int) }}"
+      type:               "{{ NODE_TYPE }}"
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  with_indexed_items:     "{{ ec2.instance_ids }}"
+
+- name: "Get list of SGs in the {{ ENV_ID }} environment..."
+  ec2_group_facts:
+    filters:
+      group_name:         "{{ ec2_security_group }}"
+    region:               "{{ aws_region }}"
+  register: sg
+
+- name: "Tag SG"
+  ec2_tag:
+    region:               "{{ aws_region }}"
+    resource:             "{{ item.group_id }}"
+    tags:
+      environment:        "{{ ENV_ID }}"
+      KubernetesCluster:  "{{ K8S_CLUSTER_NAME }}"
+  with_items:             "{{ sg.security_groups }}"

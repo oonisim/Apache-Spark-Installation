@@ -1,0 +1,127 @@
+SYS_USER: maonishi
+PKG_USER: maonishi
+
+
+#SPARK_GROUP:
+SPARK_ADMIN : maonishi
+SPARK_GROUP: k8s
+
+#--------------------------------------------------------------------------------
+# Constants
+#--------------------------------------------------------------------------------
+NODE_TYPE_MASTER: "master"
+NODE_TYPE_WORKER: "worker"
+CNI_PROVIDER_FLANNEL: "flannel"
+
+#--------------------------------------------------------------------------------
+# [Security]
+#--------------------------------------------------------------------------------
+DECRYPT_KEY_FILE: "~/.ssh/private.pem"
+
+#--------------------------------------------------------------------------------
+# Docker
+#--------------------------------------------------------------------------------
+DOCKER_GROUP: "docker"
+DOCKER_USERS:
+  - "{{ SPARK_ADMIN }}"
+
+#--------------------------------------------------------------------------------
+# Etcd
+#--------------------------------------------------------------------------------
+ETCD_CONFIG_HOME: "/etc/kubernetes"
+ETCD_CA_HOME: "{{ ETCD_CONFIG_HOME }}"
+
+#--------------------------------------------------------------------------------
+# K8S configuration file path
+#--------------------------------------------------------------------------------
+K8S_CONFIG_HOME: "/etc/kubernetes"
+K8S_CONFIG_FILE: "{{ K8S_CONFIG_HOME}}/config"
+# K8S_CONFIG_HOME gets removed at the K8S installation cleanup.
+K8S_CA_HOME: "{{ K8S_CONFIG_HOME }}/pki"
+KUBELET_CONFIG_FILE: "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
+
+
+#--------------------------------------------------------------------------------
+# kubectl config
+#--------------------------------------------------------------------------------
+KUBECONFIG_ADMIN: "{{ K8S_CONFIG_HOME }}/admin.conf"
+
+
+#--------------------------------------------------------------------------------
+# K8S installation packages
+#--------------------------------------------------------------------------------
+# K8S_PACKAGES_PREREQUISITES:
+# Until 1.8 (not in 1.9), kubelet had dependency on kubernetes-cni, hence
+# Ansible yum for kubelet fails if kubernetes-cni has not been already there.
+# Not required for 1.9/later but to be able to install 1.8/before.
+#
+# See
+# - https://github.com/kubernetes/release/pull/109
+# - https://github.com/kubernetes/release/issues/97
+#
+# kubelet-1.9.1-0.x86_64.rpm is not signed
+# https://github.com/kubernetes/kubernetes/issues/57855
+#--------------------------------------------------------------------------------
+K8S_PACKAGES_PREREQUISITES:
+# kubelet-1.9.1-0.x86_64.rpm is not signed
+# https://github.com/kubernetes/kubernetes/issues/57855
+# Temporarily disable cni installation due to the issue.
+#  - kubernetes-cni-0.6.0-0.x86_64
+  - kubernetes-cni
+
+K8S_PACKAGES_PREREQUISITES_REMOVE: "{{ K8S_PACKAGES_PREREQUISITES }}"
+#  - kubernetes-cni
+
+K8S_VERSION_186: 1.8.6-0
+K8S_VERSION_190: 1.9.0-0
+K8S_VERSION_191: 1.9.1-0
+K8S_VERSION: "{{ K8S_VERSION_190 }}"
+
+K8S_PACKAGES:
+#  - kubeadm
+#  - kubelet
+#  - kubectl
+  - "kubeadm-{{ K8S_VERSION }}.x86_64"
+  - "kubectl-{{ K8S_VERSION }}.x86_64"
+  - "kubelet-{{ K8S_VERSION }}.x86_64"
+  - flannel
+  - docker
+
+K8S_PACKAGES_REMOVE:
+  - kubeadm
+  - kubelet
+  - kubectl
+  - kubernetes-cni
+  - flannel
+  - docker
+
+
+K8S_COMMON_SERVICES:
+# Start flannel is via kubectl apply -f flanne.yaml
+  - kubelet
+
+# Note that Docker requires CNI (e.g. Flannel) as pre-requisite service for K8S.
+# See /etc/systemd/system/docker.service.requires/flanneld.service
+K8S_NETWORK_PROVIDER: "{{ CNI_PROVIDER_FLANNEL }}"
+K8S_NETWORK_SERVICES:
+  - flanneld
+
+KUBEPROXY_PORT: 8001
+
+
+#--------------------------------------------------------------------------------
+# K8S Certificates for client certificate authentications
+#--------------------------------------------------------------------------------
+APISERVER_CLIENT_CRT: /etc/kubernetes/pki/apiserver-kubelet-client.crt
+APISERVER_CLIENT_KEY: /etc/kubernetes/pki/apiserver-kubelet-client.key
+APISERVER_CA_CRT:     /etc/kubernetes/pki/ca.crt
+
+KUBELET_CLIENT_CRT:   /etc/kubernetes/pki/apiserver-kubelet-client.crt
+KUBELET_CLIENT_KEY:   /etc/kubernetes/pki/apiserver-kubelet-client.key
+KUBELET_CA_CRT:       /var/lib/kubelet/pki/kubelet.crt
+
+ETCD_CA_CRT:          /etc/kubernetes/pki/ca.crt
+# Dummy
+ETCD_CLIENT_CRT:      /etc/kubernetes/pki/apiserver-kubelet-client.crt
+ETCD_CLIENT_KEY:      /etc/kubernetes/pki/apiserver-kubelet-client.key
+

@@ -1,0 +1,72 @@
+#--------------------------------------------------------------------------------
+# Clean up previous installations
+#--------------------------------------------------------------------------------
+- name: "Stop cluster"
+  shell: |
+    {{SPARK_HOME}}/sbin/stop-all.sh
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  ignore_errors: true
+
+- name: "Stop cluster"
+  shell: |
+    pgrep -a java | grep 'spark/conf'
+  register: _result
+  until: _result.rc != 0
+  retries: 5
+  delay: 10
+  ignore_errors: true
+
+- name: "Remove {{ SPARK_PACKAGE }}"
+  shell: |
+    rm {{ SPARK_PACKAGE }}
+  args:
+    chdir: "{{ SPARK_DOWNLOAD_DIR }}"
+  ignore_errors: true
+
+#--------------------------------------------------------------------------------
+# Install Packages
+#--------------------------------------------------------------------------------
+- include_vars: "{{ ansible_distribution }}_{{ ansible_distribution_major_version}}.yml"
+- include: "{{ ansible_distribution }}_{{ ansible_distribution_major_version}}.yml"
+
+- name: "Create/recreate {{ SPARK_DOWNLOAD_DIR }}"
+  file:
+    path:   "{{ SPARK_DOWNLOAD_DIR }}"
+    state:  "directory"
+    owner:  "{{ SPARK_ADMIN }}"
+    group:  "{{ SPARK_GROUP }}"
+    mode:   0770
+
+- name: "Set owner/group as {{ SPARK_ADMIN }}:{{ SPARK_GROUP }} recursively {{ SPARK_HOME }}"
+  file:
+    path:   "{{ SPARK_HOME }}"
+    state:  "directory"
+    owner:  "{{ SPARK_ADMIN }}"
+    group:  "{{ SPARK_GROUP }}"
+    recurse: true
+
+- name: "Download {{ SPARK_DOWNLOAD_URL }}"
+  get_url:
+    url:   "{{ SPARK_DOWNLOAD_URL }}"
+    dest:  "{{ SPARK_DOWNLOAD_DIR }}/{{ SPARK_PACKAGE }}"
+    owner: "{{ SPARK_ADMIN }}"
+    group: "{{ SPARK_GROUP }}"
+    mode:  0770
+    checksum: "{{ SPARK_PACKAGE_CHECKSUM }}"
+
+- name: "Install {{ SPARK_PACKAGE }}"
+  shell: |
+    tar --overwrite --owner={{ SPARK_ADMIN }} --group={{ SPARK_GROUP }} -xzvf {{ SPARK_PACKAGE }} -C {{ SPARK_HOME }} --strip-components=1
+  args:
+    chdir: "{{ SPARK_DOWNLOAD_DIR }}"
+
+- lineinfile:
+    path: /etc/profile
+    regexp: '^export SPARK_HOHE={{ SPARK_HOME }}$'
+    line: 'SPARK_HOME={{ SPARK_HOME }}'
+
+- lineinfile:
+    path: /etc/profile
+    regexp: '^export PATH=$PATH:$SPARK_HOME/bin$'
+    line: 'export PATH=$PATH:$SPARK_HOME/bin'

@@ -1,0 +1,7 @@
+- name: "EC2.py test"
+  hosts: localhost
+  connection: local
+  tasks:
+  - meta: refresh_inventory
+  - debug:
+      msg: "{{ groups['tag_Name_master'] }}"

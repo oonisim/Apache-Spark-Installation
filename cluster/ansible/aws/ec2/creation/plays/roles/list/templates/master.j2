@@ -1,0 +1,8 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+#--------------------------------------------------------------------------------
+# K8S master node for k8s ansible configuration.
+#--------------------------------------------------------------------------------
+{% for item in hostvars['AWS_HOLDER_MASTER']['ec2'].instances %}
+MASTER_HOSTNAME={{ item.private_dns_name }}
+MASTER_NODE_IP={{ item.private_ip }}
+{% endfor %}

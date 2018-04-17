@@ -1,0 +1,14 @@
+packages:
+  - jq
+  - telnet
+  - wget
+  - curl
+  - htop
+  - atop
+  - libcgroup-tools
+  - nethogs
+  - iftop
+  - bind-utils
+  - java-1.8.0-openjdk-devel
+#  - sbt
+#  - scala

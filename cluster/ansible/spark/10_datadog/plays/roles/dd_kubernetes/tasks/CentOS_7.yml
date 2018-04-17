@@ -1,0 +1,19 @@
+- name: "datadog repository"
+  yum_repository:
+    name: datadog
+    description: datadog
+    baseurl: https://yum.datadoghq.com/rpm/x86_64/
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey: https://yum.datadoghq.com/DATADOG_RPM_KEY.public
+
+# Fix for https://github.com/ansible/ansible/issues/20711
+- name: update repo cache for the new repo
+  command: yum -q makecache -y --disablerepo=* --enablerepo=datadog
+
+- name: "Install datadog kubernetes packages"
+  yum:
+    name: "dd-check-kubernetes"
+    state: "latest"
+    update_cache: "true"

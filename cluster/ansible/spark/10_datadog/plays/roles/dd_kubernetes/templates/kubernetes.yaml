@@ -1,0 +1,23 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+---
+init_config:
+instances:
+  - port:                   {{ CADVISOR_PORT }}
+    api_server_url:         {{ APISERVER_PROTOCOL }}://{{ APISERVER_HOST }}:{{ APISERVER_PORT }}
+    bearer_token_path:      {{ DATADOG_SA_TOKEN_PATH }}
+    kubelet_tls_verify:     False
+    namespaces:
+      - {{ DATADOG_NAMESPACE }}
+    namespace_name_regexp:  '.*'
+    # To collect K8S events, set to true only on one DD agent node.
+    collect_events: false
+    #leader_candidate:       true
+    enabled_gauges:
+      - cpu.*
+      - filesystem.*
+      - memory.*
+      - network.*
+    tags:
+      - datadog_check:kubernetes
+      - datadog_node:{{ inventory_hostname }}
+      - datadog_description:datadog kubernetes check

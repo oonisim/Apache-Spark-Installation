@@ -1,0 +1,6 @@
+- name: Ensure all configured locales are present.
+  locale_gen: "name={{ item }} state=present"
+  with_items: "{{ locales }}"
+
+- name: Set default system locale
+  command: /usr/sbin/update-locale LANG={{ locale_system }} LC_ALL={{ locale_system }}

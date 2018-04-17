@@ -1,0 +1,57 @@
+- name: "Delete previous deployments if exists"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} delete -f dd-agent-sa.yaml && rm -rf dd-agent-sa.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  ignore_errors: true
+  run_once: true
+
+- name: "Create/recreate {{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  file:
+    path:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+    state:  "directory"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# datadog service account
+#--------------------------------------------------------------------------------
+- name: "Place {{ DATADOG_SERVICE_ACCOUNT }} service account manifest"
+  template:
+    src:  "{{ role_path }}/templates/dd-agent-sa.yaml"
+    dest: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}/dd-agent-sa.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+
+- name: "Deploy service account {{ DATADOG_SERVICE_ACCOUNT }}"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} apply -f dd-agent-sa.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# Setup token file of Service account {{ DATADOG_SERVICE_ACCOUNT }}.
+#--------------------------------------------------------------------------------
+- name: "Retrieve service account token"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} get secret $( {{ CTL }} get sa {{ DATADOG_SERVICE_ACCOUNT }} -n {{ DATADOG_NAMESPACE }} -o json | jq .secrets[0].name | tr -d '\"') -o json | jq .data.token
+  register: sa_token
+
+- name: "Token of {{ DATADOG_SERVICE_ACCOUNT }} in namespace {{ DATADOG_NAMESPACE }}"
+  debug:
+    msg: "{{ sa_token }}"
+
+- name: "Add sa Token to a dummy host to use among different inventory hosts."
+  add_host:
+    name:               "DATA_HOLDER_HOST"
+    datadog_sa_token:   "{{ sa_token }}"

@@ -1,0 +1,13 @@
+apiVersion: {{ RBAC_API_VERSION }}
+kind: ClusterRoleBinding
+metadata:
+  name: kube-state-metrics
+roleRef:
+  apiGroup: {{ RBAC_API_GROUP }}
+  kind: ClusterRole
+  name: kube-state-metrics
+subjects:
+- kind: ServiceAccount
+  name: {{ KUBESTATE_SERVICE_ACCOUNT }}
+  namespace: {{ KUBESTATE_NAMESPACE }}
+

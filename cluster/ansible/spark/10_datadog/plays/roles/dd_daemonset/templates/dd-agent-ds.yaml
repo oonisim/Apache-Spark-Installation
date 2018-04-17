@@ -1,0 +1,199 @@
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+---
+#--------------------------------------------------------------------------------
+# Mount /etc/dd-agent/conf.d/kubernetes.yaml as config map.
+#--------------------------------------------------------------------------------
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dd-agent-config
+  namespace: {{ DATADOG_NAMESPACE }}
+data:
+  kubernetes-config: |
+    init_config:
+    instances:
+      - port: {{ CADVISOR_PORT }}
+        api_server_url:       {{ APISERVER_PROTOCOL }}://{{ APISERVER_HOST }}:{{ APISERVER_PORT }}
+        apiserver_client_crt: {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ APISERVER_CLIENT_CRT|basename }}
+        apiserver_client_key: {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ APISERVER_CLIENT_KEY|basename }}
+        apiserver_ca_cert:    {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ APISERVER_CA_CRT|basename }}
+        kubelet_tls_verify:   True
+        kubelet_client_crt:   {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ KUBELET_CLIENT_CRT|basename }}
+        kubelet_client_key:   {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ KUBELET_CLIENT_KEY|basename }}
+        kubelet_cert:         {{ DD_AGENT_CERT_MOUNT_PATH }}/{{ KUBELET_CA_CRT|basename }}
+        namespace_name_regexp: '.*'
+        leader_candidate:     true
+        enabled_gauges:
+          - cpu.*
+          - filesystem.*
+          - memory.*
+          - network.*
+    tags:
+      - datadog_check:dd_agent
+      - datadog_node:{{ inventory_hostname }}
+      - datadog_description:datadog dd-agent container
+#  kubernetes-state-config: |
+#    init_config:
+#    instances:
+#      - kube_state_url: http://kube-state-metrics.{{ KUBESTATE_NAMESPACE }}.svc.cluster.local:8080/metrics
+#    tags:
+#      - datadog_check:kube_state_metric
+#      - datadog_node:{{ inventory_hostname }}
+#      - description:datadog check to get mertics from kube-state-metrics
+#      - url:http://kube-state-metrics.{{ KUBESTATE_NAMESPACE }}.svc.cluster.local:8080/metrics
+
+---
+#--------------------------------------------------------------------------------
+# Datadog K8S daemonset generated with Ansible
+# https://app.datadoghq.com/account/settings#agent/kubernetes
+#--------------------------------------------------------------------------------
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: dd-agent
+  namespace: {{ DATADOG_NAMESPACE }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: dd-agent
+      name: dd-agent
+    spec:
+      nodeSelector: {{ DATADOG_NODE_SELECTOR }}
+      serviceAccountName: {{ DATADOG_SERVICE_ACCOUNT }}
+      # https://github.com/kubernetes/kubernetes/issues/27282
+      containers:
+      - image: datadog/docker-dd-agent:latest
+        imagePullPolicy: Always
+        name: dd-agent
+        ports:
+          - containerPort: 8125
+            name: dogstatsdport
+            protocol: UDP
+          - containerPort: 8126
+            name: traceport
+            protocol: TCP
+{% if DISTRIBUTION == DISTRIBUTION_OSE %}
+        #--------------------------------------------------------------------------------
+        # Just temporal trick to get around SELinux preventing access.
+        # https://github.com/kubernetes/kubernetes/issues/27282
+        # [Note]
+        # Giving privileged is a bad idea to avoid SELinux/permission denied.
+        # Need to fiture out the correct label configuration if a pod needs host file access.
+        # Access to docker.sock allows delete pods, expose other pod internals.
+        #--------------------------------------------------------------------------------
+        securityContext:
+          privileged: true
+{% endif %}
+        env:
+          - name: TAGS
+            value: "{{ DATADOG_TAGS }}"
+          - name: API_KEY
+            value: "{{ DATADOG_API_KEY }}"
+          - name: KUBERNETES
+            value: "yes"
+          - name: SD_BACKEND
+            value: docker
+          - name: DD_COLLECT_KUBERNETES_EVENTS
+            value: "true"
+          - name: DD_LEADER_ELECTION
+            value: "true"
+          - name: DD_PROCESS_AGENT_ENABLED
+            #value: "true"
+            value: "false"
+{% if DISTRIBUTION == DISTRIBUTION_OSE %}
+          - name: DD_KUBERNETES_KUBELET_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+{% endif %}
+{% if DISTRIBUTION == DISTRIBUTION_OSE %}
+          #--------------------------------------------------------------------------------
+          # This resolved the issue of not being able to talk to kubelet.
+          # Uncomment this variable if the agent has issues reaching kubelet
+          #--------------------------------------------------------------------------------
+          - name: KUBERNETES_KUBELET_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName  # Kubernetes < 1.7
+          #       fieldPath: status.hostIP  # Kubernetes >= 1.7
+{% endif %}
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        volumeMounts:
+{% if DISTRIBUTION == DISTRIBUTION_K8S %}
+          #--------------------------------------------------------------------------------
+          # RHEL does not support if docker socket mounted, besides it require privileged
+          #--------------------------------------------------------------------------------
+          - name: dockersocket
+            mountPath: /var/run/docker.sock
+{% endif %}
+          - name: procdir
+            mountPath: /host/proc
+            readOnly: true
+          - name: cgroups
+            mountPath: /host/sys/fs/cgroup
+            readOnly: true
+          #--------------------------------------------------------------------------------
+          # Mount API server client certificate and CA files as secrets
+          #--------------------------------------------------------------------------------
+          - name: k8s-certs
+            mountPath:  {{ DD_AGENT_CERT_MOUNT_PATH }}
+            readOnly:   true
+          #--------------------------------------------------------------------------------
+          # Mount API server client certificate and CA files as secrets
+          #--------------------------------------------------------------------------------
+          - name: dd-agent-config
+            #--------------------------------------------------------------------------------
+            # Does not work causing CrashLoopBackOff status to dd-agent pods.
+            #--------------------------------------------------------------------------------
+            #mountPath: /etc/dd-agent/conf.d
+            mountPath:  /conf.d     # somehow it goes to /etc/dd-agent/conf.d
+            #--------------------------------------------------------------------------------
+            readOnly: true
+        #lifecycle:
+        #  postStart:
+        #    exec:
+        #      command: ["/bin/bash", "-c", "sleep 10 && /etc/init.d/datadog-agent info -v"]
+        livenessProbe:
+          exec:
+            command:
+            - ./probe.sh
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+{% if DISTRIBUTION == DISTRIBUTION_K8S %}
+        - hostPath:
+            path: /var/run/docker.sock
+          name: dockersocket
+{% endif %}
+        - hostPath:
+            path: /proc
+          name: procdir
+        - hostPath:
+            path: /sys/fs/cgroup
+          name: cgroups
+        #--------------------------------------------------------------------------------
+        # API server client certificate and CA files as secrets
+        #--------------------------------------------------------------------------------
+        - name: k8s-certs
+          secret:
+            secretName:  k8s-certs
+            defaultMode: 448     # 0700 as JSON does not support octal
+        #--------------------------------------------------------------------------------
+        # /etc/dd-agent/conf.d/kubernetes.yaml for further monitoring.
+        # https://gist.github.com/CharlyF/dd481c3ed4fe38e2e47b4ccd85328032
+        #--------------------------------------------------------------------------------
+        - name: dd-agent-config
+          configMap:
+            name: dd-agent-config
+            items:
+            - key: kubernetes-config
+              path: kubernetes.yaml
+            #- key: kubernetes-state-config
+            #  path: kubernetes_state.yaml

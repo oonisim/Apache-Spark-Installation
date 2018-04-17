@@ -1,0 +1,24 @@
+pkg_ntp: ntp
+pkg_haveged: haveged
+
+packages:
+  - locales
+  - ntp
+  - haveged
+  - python-keyczar
+  - python-pip
+  - rsync
+  - git
+  - wget
+  - curl
+  - zip
+  - unzip
+  - gettext
+
+locales:
+  - en_US
+  - en_US.UTF-8
+  - en_AU
+  - en_AU.UTF-8
+
+locale_system: en_US.UTF-8

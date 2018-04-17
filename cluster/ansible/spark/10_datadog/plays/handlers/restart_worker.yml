@@ -1,0 +1,15 @@
+- name: "Restart openshift node"
+  service:
+    name:     "atomic-openshift-node"
+    state:    "restarted"
+    enabled:  "yes"
+  listen: "restart_openshift_node"
+  when: DISTRIBUTION == DISTRIBUTION_OSO or DISTRIBUTION == DISTRIBUTION_OSE
+
+- name: "restart k8s"
+  service:
+    name:     "{{ item }}"
+    state:    "restarted"
+    enabled:  "yes"
+  with_items: "{{ K8S_COMMON_SERVICES }}"
+  when: DISTRIBUTION == DISTRIBUTION_K8S

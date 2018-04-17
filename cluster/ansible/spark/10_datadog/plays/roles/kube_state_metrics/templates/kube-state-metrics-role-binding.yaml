@@ -1,0 +1,14 @@
+apiVersion: {{ RBAC_API_VERSION }}
+kind: RoleBinding
+metadata:
+  name: kube-state-metrics
+  namespace: {{ KUBESTATE_NAMESPACE }}
+roleRef:
+  apiGroup: {{ RBAC_API_GROUP }}
+  kind: Role
+  name: kube-state-metrics-resizer
+subjects:
+- kind: ServiceAccount
+  name: {{ KUBESTATE_SERVICE_ACCOUNT }}
+  namespace: {{ KUBESTATE_NAMESPACE }}
+

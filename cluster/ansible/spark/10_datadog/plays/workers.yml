@@ -1,0 +1,22 @@
+- name: "Installation for worker nodes"
+  hosts: workers
+  any_errors_fatal: true
+  become: yes
+  become_user: root
+  become_method: sudo
+  roles:
+    - dd_installation
+
+  #--------------------------------------------------------------------------------
+  # Ansible has serious bug of handler not triggered.
+  # https://github.com/ansible/ansible/issues/20603
+  #  - import_tasks: handlers/restart_datadogs.yml
+  #--------------------------------------------------------------------------------
+  handlers:
+    - name: "restart datadog agent"
+      shell: |
+        /etc/init.d/datadog-agent restart
+        sleep 15
+        /etc/init.d/datadog-agent info -v
+      register: ddagent_restart
+      listen: "restart_datadog"

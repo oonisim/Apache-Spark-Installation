@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------
+# K8S REST API response checks.
+#--------------------------------------------------------------------------------
+- name: "Place dd-agent http_check manifest for K8S services"
+  template:
+    src: "{{ role_path }}/templates/http_check.yaml"
+    dest: "{{ DATADOG_AGENT_HOME }}/conf.d/http_check.yaml"
+    owner: "dd-agent"
+    group: "dd-agent"
+    mode: 0640
+  notify: "restart_datadog"

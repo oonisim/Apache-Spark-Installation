@@ -1,0 +1,19 @@
+#--------------------------------------------------------------------------------
+# Docker group and its users to avoid using root/sudo for the users.
+# Beware of the risk of users being able to access the docker socket.
+# https://www.projectatomic.io/blog/2015/08/
+# why-we-dont-let-non-root-users-run-docker-in-centos-fedora-or-rhel/
+#--------------------------------------------------------------------------------
+- name: "Create group docker..."
+  group:
+    name: "{{ DOCKER_GROUP }}"
+    state: present
+
+- name: "Adding user to {{ DOCKER_GROUP }} group"
+  user:
+    name:   "{{ item }}"
+    groups: "{{ DOCKER_GROUP }}"
+    append: "yes"                 # useradd -aG
+  with_items:
+     - "{{ DOCKER_USERS }}"
+

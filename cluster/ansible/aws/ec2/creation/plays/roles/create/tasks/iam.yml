@@ -1,0 +1,22 @@
+- name: "Create IAM Managed Policy for K8S AWS cloud provider"
+  iam_managed_policy:
+    policy_name: "{{ CLOUD_PROVIDER_POLICY_NAME }}"
+    policy: "{{ lookup('file', 'k8s_cloud_provider_policy.json') }}"
+    policy_description: "Policy for K8S AWS cloud provider"
+    state: present
+  register: policy
+
+- debug:
+    msg: "{{ policy }}"
+
+- name: "Create IAM Role for K8S AWS cloud provider"
+  iam_role:
+    name: "{{ CLOUD_PROVIDER_ROLE_NAME }}"
+    assume_role_policy_document: "{{ lookup('file','trust_relation_policy.json') }}"
+    state: present
+    managed_policy:
+      - "{{ policy.policy.arn }}"
+  register: role
+
+- debug:
+    msg: "{{ role }}"

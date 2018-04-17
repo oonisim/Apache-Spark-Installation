@@ -1,0 +1,2 @@
+- import_tasks: k8s_secret_certificates.yml
+- import_tasks: dd_agent_ds.yml

@@ -1,0 +1,55 @@
+- name: "Delete previous deployments if exists"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} delete -f dd-agent-ds.yaml && rm -rf dd-agent-ds.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  ignore_errors: true
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# dd-agent deployment
+#--------------------------------------------------------------------------------
+- name: "mkdir {{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }} if not exist"
+  file:
+    path:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+    state:  "directory"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+
+- name: "Place datadog daemonsent manifests for K8S services"
+  template:
+    src:    "{{ role_path }}/templates/dd-agent-ds.yaml"
+    dest:   "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}/dd-agent-ds.yaml"
+    owner:  "dd-agent"
+    group:  "dd-agent"
+    mode:   0770
+  run_once: true
+
+- name: "Deploy dd-agent daemonset"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} apply -f dd-agent-ds.yaml
+  args:
+    chdir: "{{ DATADOG_MANIFEST_HOME }}/{{ role_path|basename }}"
+  run_once: true
+
+#--------------------------------------------------------------------------------
+# https://github.com/openshift/origin/issues/11153
+# OpenShift SCC by default does not allow hostPath in pod for security reason.
+# The access to host files must be granted explicitly.
+#
+# Giving privileged as in https://access.redhat.com/solutions/3120011 is not a good idea.
+# {{ CTL }} adm policy add-scc-to-user privileged system:serviceaccount:{{ DATADOG_NAMESPACE }}:{{ DATADOG_SERVICE_ACCOUNT }}
+# {{ CTL }} adm policy add-cluster-role-to-user cluster-reader system:serviceaccount:deafult:dd-agent-sa
+#--------------------------------------------------------------------------------
+- name: "Add required previlleage to access API resources"
+  become: true
+  become_user: "{{ SPARK_ADMIN }}"
+  shell: |
+    {{ CTL }} adm policy add-scc-to-user hostaccess system:serviceaccount:{{ DATADOG_NAMESPACE }}:{{ DATADOG_SERVICE_ACCOUNT }}
+  when: DISTRIBUTION == DISTRIBUTION_OSE
+

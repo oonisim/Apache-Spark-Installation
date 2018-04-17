@@ -1,0 +1,45 @@
+---
+- name: "Get list of instances in the {{ ENV_ID }} environment..."
+#  ec2_remote_facts:  # Deprecated
+  ec2_instance_facts:
+    filters:
+      "tag:environment": "{{ ENV_ID }}"
+      instance-state-name: running
+    region:          "{{ aws_region }}"
+  register: ec2_instance_list
+
+- name: "Get list of SGs in the {{ ENV_ID }} environment..."
+  ec2_group_facts:
+    filters:
+      "tag:environment": "{{ ENV_ID }}"
+    region:          "{{ aws_region }}"
+    # Use environment variables
+    #aws_access_key:       "{{ ec2_access_key }}"
+    #aws_secret_key:       "{{ ec2_secret_key }}"
+  register: ec2_sg_list
+
+- debug:
+    msg: "{{ ec2_instance_list }}"
+
+- name: create hosts files...
+  local_action:
+    module: template
+    src:    hosts.j2
+    dest:   "{{ HOSTFILE }}"
+
+#- name: create EC2 instance list...
+#  local_action:
+#    module: template
+#    src:    instances.j2
+#    dest:   "{{ HOSTFILE }}/instances.{{ ENV_ID }}"
+#
+#- local_action :
+#    module: copy
+#    content: "{{ ec2_instance_list | to_nice_yaml }}"
+#    dest:    "{{ role_path }}/results/ec2.{{ ENV_ID }}.instances.yml"
+#
+#- local_action :
+#    module: copy
+#    content: "{{ ec2_instance_list | to_nice_json }}"
+#    dest:    "{{ role_path }}/results/ec2.{{ ENV_ID }}.instances.json"
+

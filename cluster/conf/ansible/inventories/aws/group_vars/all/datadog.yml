@@ -1,0 +1,11 @@
+DATADOG_TAGS: "environment:masa,project:test"
+DATADOG_AGENT_HOME: /etc/dd-agent
+DATADOG_MANIFEST_HOME: "{{DATADOG_AGENT_HOME }}/manifests"
+DD_AGENT_CERT_MOUNT_PATH: "/etc/kubernetes/pki"
+DATADOG_NAMESPACE: "default"
+DATADOG_SERVICE_ACCOUNT: "datadog"
+#DATADOG_NODE_SELECTOR: '{"node_type":"monitor"}'
+DATADOG_NODE_SELECTOR:
+
+DATADOG_SA_TOKEN_DIR:     "{{DATADOG_AGENT_HOME }}/secrets"
+DATADOG_SA_TOKEN_PATH:    "{{ DATADOG_SA_TOKEN_DIR }}/datadog_sa_token"

@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------
+# Group settings for users to be able to access required objects.
+#--------------------------------------------------------------------------------
+- name: "Create group docker if not exits"
+  group:
+    name: "{{ DOCKER_GROUP }}"
+    state: present
+
+- name: "Adding dd-agent in {{ SPARK_GROUP }} to access K8S file e.g certificates"
+  user:
+    name:     "dd-agent"
+    groups:   "{{ SPARK_GROUP }}"
+    append:   "yes"                 # useradd -aG
+
+- name: "Adding dd-agent user to {{ DOCKER_GROUP }} group for dd-agent to access docker e.g. docker.sock"
+  user:
+    name:     "dd-agent"
+    groups:   "{{ DOCKER_GROUP }}"
+    append:   "yes"                 # useradd -aG
+
+- name: "Adding {{ SPARK_ADMIN }} to dd-agent group"
+  user:
+    name:   "{{ item }}"
+    groups: "dd-agent"
+    append: "yes"                 # useradd -aG
+  with_items:
+     - "{{ SPARK_ADMIN }}"

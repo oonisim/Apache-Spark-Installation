@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------
+# Clean up previous installations
+#--------------------------------------------------------------------------------
+
+
+#--------------------------------------------------------------------------------
+# Install Pckages
+#--------------------------------------------------------------------------------
+- name: Install sbt
+  shell: |
+    curl https://bintray.com/sbt/rpm/rpm | sudo tee /etc/yum.repos.d/bintray-sbt-rpm.repo
+
+# Fix for https://github.com/ansible/ansible/issues/20711
+#- name: update repo cache for the new repo
+#  command: yum -q makecache -y --disablerepo=* --enablerepo=bintray-sbt-rpm
+
+- name: "Install sbt packages"
+  yum:
+    name: "sbt"
+    update_cache: "true"
+    state: latest
+
+
