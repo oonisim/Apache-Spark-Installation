@@ -1,6 +1,6 @@
-K8S deployment with kubeadm using Ansible
+Spark standalone cluster deployment with kubeadm using Ansible
 =========
-Build a latest Kubernetes (K8S) non-HA cluster in AWS (CentOS or RHEL) using kubeadm to explore K8S. There are multiple K8S/AWS deployment tools (kops, rancher, etc) and kubeadm is not yet production ready tool but it will be the one. Note that this is to explore K8S, hence basic security considerations.
+Build a standalone Spark in AWS (CentOS or RHEL).
 
 AWS Network Topology
 ------------
@@ -27,13 +27,11 @@ Ansible playbooks and inventories under the Git repository.
 │   │   │   │   └── operations
 │   │   │   ├── conductor.sh
 │   │   │   └── player.sh
-│   │   └── k8s
+│   │   └── spark
 │   │       ├── 01_prerequisite      <---- Module to setup Ansible pre-requisites
 │   │       ├── 02_os                <---- Module to setup OS to install K8S
-│   │       ├── 03_k8s_setup         <---- Module to setup K8S cluster
-│   │       ├── 04_k8s_configuration <---- Module to configure K8S after setup
+│   │       ├── 03_spark_setup         <---- Module to setup K8S cluster
 │   │       ├── 10_datadog           <---- Module to setup datadog monitoring (option)
-│   │       ├── 20_applications      <---- Module for sample applications
 │   │       ├── conductor.sh         <---- Script to conduct playbook executions
 │   │       └── player.sh            <---- Playbook player
 │   ├── conf
