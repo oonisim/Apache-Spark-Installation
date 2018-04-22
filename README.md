@@ -7,7 +7,7 @@ AWS Network Topology
 
 Simple 1 master + 2 workers (can be increased by a parameter) in a VPC subnet, to be created by the Ansible playbooks.
 
-<img src="https://github.com/oonisim/Apache-Spark-Installation/blob/master/Images/AWS.png" width="500">
+<img src="https://github.com/oonisim/Apache-Spark-Installation/blob/master/Images/AWS.png">
 
 Repository Structure
 ------------
