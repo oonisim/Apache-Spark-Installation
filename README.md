@@ -1,4 +1,4 @@
-Spark standalone cluster deployment with kubeadm using Ansible
+Spark standalone cluster deployment using Ansible
 =========
 Build a standalone Spark in AWS (CentOS or RHEL).
 
@@ -29,7 +29,7 @@ Ansible playbooks and inventories under the Git repository.
 │   │   └── spark
 │   │       ├── 01_prerequisite      <---- Module to setup Ansible pre-requisites
 │   │       ├── 02_os                <---- Module to setup OS to install Spark
-│   │       ├── 03_spark_setup         <---- Module to setup Spark cluster
+│   │       ├── 03_spark_setup       <---- Module to setup Spark cluster
 │   │       ├── 10_datadog           <---- Module to setup datadog monitoring (option)
 │   │       ├── conductor.sh         <---- Script to conduct playbook executions
 │   │       └── player.sh            <---- Playbook player
@@ -140,7 +140,7 @@ Parameters for an environment are all isolated in group_vars of the environment 
 │               ├── group_vars
 │               │   ├── all             <---- Configure properties in the 'all' group vars
 │               │   │   ├── env.yml     <---- Enviornment parameters e.g. ENV_ID to identify and to tag configuration items
-│               │   │   ├── server.yml  <---- Server parameters e.g. location of kubelet configuration file
+│               │   │   ├── server.yml  <---- Server parameters
 │               │   │   ├── aws.yml     <---- e.g. AMI image id, volume type, etc
 │               │   │   ├── spark.yml   <---- Spark configurations
 │               │   │   └── datadog.yml
