@@ -1,5 +1,5 @@
 #--------------------------------------------------------------------------------
 # K8S master node for k8s ansible configuration.
 #--------------------------------------------------------------------------------
-MASTER_HOSTNAME=ip-10-0-0-230.us-west-1.compute.internal
-MASTER_NODE_IP=10.0.0.230
+MASTER_HOSTNAME=ip-10-0-0-102.us-west-1.compute.internal
+MASTER_NODE_IP=10.0.0.102

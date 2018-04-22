@@ -9,9 +9,9 @@
 # CIDR: 10.0.0.0/24
 # AZ:   us-west-1b
 #--------------------------------------------------------------------------------
-10.0.0.230  ip-10-0-0-230.us-west-1.compute.internal
-10.0.0.236  ip-10-0-0-236.us-west-1.compute.internal
-10.0.0.59  ip-10-0-0-59.us-west-1.compute.internal
+10.0.0.102  ip-10-0-0-102.us-west-1.compute.internal
+10.0.0.106  ip-10-0-0-106.us-west-1.compute.internal
+10.0.0.165  ip-10-0-0-165.us-west-1.compute.internal
 
 127.0.0.1	localhost
 #127.0.1.1	loopback

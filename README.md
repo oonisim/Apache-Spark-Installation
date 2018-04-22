@@ -7,8 +7,6 @@ AWS Network Topology
 
 Simple 1 master + 2 workers (can be increased by a parameter) in a VPC subnet, to be created by the Ansible playbooks.
 
-<img src="https://github.com/oonisim/Kubernetes/blob/master/Images/AWS.png">
-
 
 Repository Structure
 ------------
@@ -19,7 +17,7 @@ Ansible playbooks and inventories under the Git repository.
 
 ```
 .
-├── cluster         <---- K8S cluster installation home (AWS+K8S)
+├── cluster         <---- Spark cluster installation home (AWS+Spark)
 │   ├── ansible     <---- Ansible playbook directory
 │   │   ├── aws
 │   │   │   ├── ec2
@@ -29,8 +27,8 @@ Ansible playbooks and inventories under the Git repository.
 │   │   │   └── player.sh
 │   │   └── spark
 │   │       ├── 01_prerequisite      <---- Module to setup Ansible pre-requisites
-│   │       ├── 02_os                <---- Module to setup OS to install K8S
-│   │       ├── 03_spark_setup         <---- Module to setup K8S cluster
+│   │       ├── 02_os                <---- Module to setup OS to install Spark
+│   │       ├── 03_spark_setup         <---- Module to setup Spark cluster
 │   │       ├── 10_datadog           <---- Module to setup datadog monitoring (option)
 │   │       ├── conductor.sh         <---- Script to conduct playbook executions
 │   │       └── player.sh            <---- Playbook player
@@ -38,30 +36,30 @@ Ansible playbooks and inventories under the Git repository.
 │   │   └── ansible          <---- Ansible configuration directory
 │   │       ├── ansible.cfg  <---- Configurations for all plays
 │   │       └── inventories  <---- Each environment has it inventory here
-│   │           ├── aws      <---- AWS/K8S environment inventory
+│   │           ├── aws      <---- AWS/Spark environment inventory
 │   │           └── template
 │   └── tools
-├── master      <---- K8S master node data for run_k8s.s created by run_aws.sh or update manally.
-├── run.sh      <---- Run run_aws.sh and run_k8s.sh
+├── master      <---- Spark master node data for run_Spark.s created by run_aws.sh or update manally.
+├── run.sh      <---- Run run_aws.sh and run_Spark.sh
 ├── run_aws.sh  <---- Run AWS setups
-└── run_k8s.sh  <---- Run K8S setups
+└── run_Spark.sh  <---- Run Spark setups
 ```
 
 #### Module and structure
 
-Module is a set of playbooks and roles to execute a specific task e.g. 03_k8s_setup is to setup a K8S cluster. Each module directory has the same structure having Readme, Plays, and Scripts.
+Module is a set of playbooks and roles to execute a specific task e.g. 03_Spark_setup is to setup a Spark cluster. Each module directory has the same structure having Readme, Plays, and Scripts.
 ```
-03_k8s_setup/
+03_Spark_setup/
 ├── Readme.md         <---- description of the module
 ├── plays
 │   ├── roles
 │   │   ├── common    <---- Common tasks both for master and workers
 │   │   ├── master    <---- Setup master node
-│   │   ├── pki       <---- Patch up K8S CA on master
-│   │   ├── user      <---- Setup K8S administrative users on master
+│   │   ├── pki       <---- Patch up Spark CA on master
+│   │   ├── user      <---- Setup Spark administrative users on master
 │   │   ├── worker    <---- Setup worker nodes
 │   │   ├── helm      <---- Setup Helm package manager
-│   │   └── dashboard <---- Setup K8S Dashboard
+│   │   └── dashboard <---- Setup Spark Dashboard
 │   ├── site.yml
 │   ├── masters.yml   <--- playbook for master node
 │   └── workers.yml   <--- playbook for worker nodes
@@ -95,7 +93,7 @@ Install AWS CLI and set the environment variables.
 Have Ansible (2.4.1 or later) and Boto to be able to run AWS ansible features. If the host is RHEL/CentOS/Ubuntu, run below will do the job.
 
 ```
-(cd ./cluster/ansible/k8s/01_prerequisite/scripts && ./setup.sh)
+(cd ./cluster/ansible/Spark/01_prerequisite/scripts && ./setup.sh)
 ```
 
 Test the Ansible dynamic inventory script.
@@ -114,7 +112,7 @@ ssh ${REMOTE_USER}@<EC2 server> sudo ls  # no prompt for asking password
 ```
 
 #### Datadog (optional)
-Create a Datadog trial account and set the environment variable DATADOG_API_KEY to the [Datadog account API_KEY](https://app.datadoghq.com/account/settings#api). The Datadog module setups the monitors/metrics to verify that K8S is up and running, and can start monitoring and setup alerts right away.
+Create a Datadog trial account and set the environment variable DATADOG_API_KEY to the [Datadog account API_KEY](https://app.datadoghq.com/account/settings#api). The Datadog module setups the monitors/metrics to verify that Spark is up and running, and can start monitoring and setup alerts right away.
 
 #### Ansible inventory
 
@@ -123,7 +121,7 @@ Set environment (or shell) variable TARGET_INVENTORY=aws. The variable identifie
 Let's try
 ------------
 
-Run ./run.sh to run all at once (create AWS IAM policy/role, VPC, subnet, router, SG, EC2, ..., setup K8S cluster and applications)  or go through the configurations and executions step by step below.
+Run ./run.sh to run all at once (create AWS IAM policy/role, VPC, subnet, router, SG, EC2, ..., setup Spark cluster and applications)  or go through the configurations and executions step by step below.
 
 ---
 
@@ -169,7 +167,7 @@ Set the default Linux account (centos for CentOS EC2) that can sudo without pass
 Set the inventory name _aws_ to ENV_ID in env.yml which is used to tag the configuration items in AWS (e.g. EC2). The tags are then used to identify configuration items that belong to the enviornment, e.g. EC2 dynamic inventory hosts.
 
 #### Master node information
-Set **private** AWS DNS name and IP of the master node instance. If run_aws.sh is used, it creates a file **master** which includes them and run_k8s.sh uses them. Otherwise set them in env.yml and as environment variables after having created the AWS instances.
+Set **private** AWS DNS name and IP of the master node instance. If run_aws.sh is used, it creates a file **master** which includes them and run_Spark.sh uses them. Otherwise set them in env.yml and as environment variables after having created the AWS instances.
 
 * MASTER_HOSTNAME
 * MASTER_NODE_IP
@@ -200,11 +198,11 @@ Set TARGET_INVENTORY=aws variable which identifies the Ansible inventory **aws**
 ├── master
 ├── run.sh
 ├── run_aws.sh   <--- Run this script.
-└── run_k8s.sh
+└── run_Spark.sh
 ```
 
-### K8S
-In the directory, run run_k8s.sh. If DATADOG_API_KEY is not set, the 10_datadog module will cause errors.
+### Spark
+In the directory, run run_Spark.sh. If DATADOG_API_KEY is not set, the 10_datadog module will cause errors.
 
 ```
 .
@@ -213,21 +211,21 @@ In the directory, run run_k8s.sh. If DATADOG_API_KEY is not set, the 10_datadog 
 ├── master       <---- Make sure master node information is set in this file
 ├── run.sh
 ├── run_aws.sh
-└── run_k8s.sh   <---- Run this script
+└── run_Spark.sh   <---- Run this script
 ```
 
 Alternatively, run each module one by one, and skip 10_datadog if not using.
 ```
-pushd ansible/k8s/<module>/scripts && ./main.sh or
-ansible/k8s/<module>/scripts/main.sh aws <ansible remote_user>
+pushd ansible/Spark/<module>/scripts && ./main.sh or
+ansible/Spark/<module>/scripts/main.sh aws <ansible remote_user>
 ```
 
 Modules are:
 ```
 ├── 01_prerequisite      <---- Module to setup Ansible pre-requisites
-├── 02_os                <---- Module to setup OS to install K8S
-├── 03_k8s_setup         <---- Module to setup K8S cluster
-├── 04_k8s_configuration <---- Module to configure K8S after setup
+├── 02_os                <---- Module to setup OS to install Spark
+├── 03_Spark_setup         <---- Module to setup Spark cluster
+├── 04_Spark_configuration <---- Module to configure Spark after setup
 ├── 10_datadog           <---- Module to setup datadog monitoring (option)
 ├── 20_applications      <---- Module for sample applications
 ├── conductor.sh         <---- Script to conduct playbook executions
@@ -253,9 +251,9 @@ Access ht<span>tp://</span>EXTERNAL-IP and it should show the page:
 
 #### Datadog
 
-Login to the Datadog and check its [dashboard](https://app.datadoghq.com/screen/integration/86/kubernetes?tv_mode=false). 10_datadog module has setup tests to verify K8S API server, etcd, kubelet. [Datadog agent pods](https://docs.datadoghq.com/integrations/kubernetes/) reports metrics from [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) pod in the cluster, and from cAdvisor via kubelet, hence the cluster health and events such as pod killed by OOM can be verified.
+Login to the Datadog and check its [dashboard](https://app.datadoghq.com/screen/integration/86/kubernetes?tv_mode=false). 10_datadog module has setup tests to verify Spark API server, etcd, kubelet. [Datadog agent pods](https://docs.datadoghq.com/integrations/kubernetes/) reports metrics from [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) pod in the cluster, and from cAdvisor via kubelet, hence the cluster health and events such as pod killed by OOM can be verified.
 
-<img src="https://github.com/oonisim/Kubernetes/blob/master/Images/datadog.k8s.png" width="500">
+<img src="https://github.com/oonisim/Kubernetes/blob/master/Images/datadog.Spark.png" width="500">
 
 <img src="https://github.com/oonisim/Kubernetes/blob/master/Images/datadog.monitor.png" width="400">
 
@@ -265,7 +263,7 @@ Considerations
 ------------
 
 #### Hostname
-Make sure each node has correct hostname set and it can be resolved in all nodes. Otherwise there can be issues that K8S node cannot join the cluster although kubeadm join says success.
+Make sure each node has correct hostname set and it can be resolved in all nodes. Otherwise there can be issues that Spark node cannot join the cluster although kubeadm join says success.
 
 #### Disable swap
 
@@ -321,12 +319,12 @@ Instead of using --cloud-provider=aws to kubeadm, use kubeadm configuration. --c
 ```
 kubeadm_config.yaml
 kind: MasterConfiguration
-apiVersion: kubeadm.k8s.io/v1alpha1
+apiVersion: kubeadm.Spark.io/v1alpha1
 api:
   advertiseAddress: {{ APISERVER_ADVERTISE_ADDRESS }}
 networking:
-  podSubnet:        {{ K8S_SERVICE_ADDRESSES }}       <---- POD network CIDR 10.244.0.0/16
-cloudProvider:      {{ K8S_CLOUD_PROVIDER }}          <---- aws
+  podSubnet:        {{ Spark_SERVICE_ADDRESSES }}       <---- POD network CIDR 10.244.0.0/16
+cloudProvider:      {{ Spark_CLOUD_PROVIDER }}          <---- aws
 ```
 
 #### Cleanup / Reinstallation
@@ -350,7 +348,7 @@ kubelet --runtime-cgroups=<docker cgroup> --kubelet-cgroups <docker cgroup>
 ```
 
 #### SELinux
-For K8S pods to be able to access the host files, need to align or relabel the files, or need to configure POD security contexts. To avoid these steps, for this experimental K8s deployment, disable SELinux. DO NOT in real environments.
+For Spark pods to be able to access the host files, need to align or relabel the files, or need to configure POD security contexts. To avoid these steps, for this experimental Spark deployment, disable SELinux. DO NOT in real environments.
 
 **/etc/sysconfig/selinux**
 ```
@@ -358,7 +356,7 @@ SELINUX=disabled
 ```
 
 #### Firewalld
-Turn off the firewalld as K8S uses iptables to re-route the access to services to the backend pods.
+Turn off the firewalld as Spark uses iptables to re-route the access to services to the backend pods.
 ```
 sudo systemctl --now disable firewalld
 sudo systemctl stop firewalld
@@ -383,7 +381,7 @@ References
 > Kubernetes has the concept of a Cloud Provider, which is a module which provides an interface for managing TCP Load Balancers, Nodes (Instances) and Networking Routes.
 
 * [Rancher Docs - Kubernetes - Cloud Providers](http://rancher.com/docs/rancher/latest/en/kubernetes/providers/)
-* [K8S AWS Cloud Provider Notes](https://docs.google.com/document/d/17d4qinC_HnIwrK0GHnRlD1FKkTNdN__VO4TH9-EzbIY/edit)
+* [Spark AWS Cloud Provider Notes](https://docs.google.com/document/d/17d4qinC_HnIwrK0GHnRlD1FKkTNdN__VO4TH9-EzbIY/edit)
 
 #### AWS
 
